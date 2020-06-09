@@ -1,0 +1,44 @@
+# -- First Dataflow job
+
+nohup python /home/$USER/professional-services/examples/dataflow-python-examples/data_generation_for_benchmarking.py \
+--num_records=1000 \
+--schema_file=/home/$USER/professional-services/examples/dataflow-python-examples/batch-examples/cookbook-examples/pipelines/resources/part-schema.json \
+--p_null=0.05 \
+--output_bq_table=BigQueryFaker.parts \
+--project=$PROJECT_ID \
+--requirements_file=/home/$USER/professional-services/examples/dataflow-python-examples/requirements.txt \
+--disk_size_gb=30 \
+--worker_machine_type=n1-highcpu-2 \
+--runner=DataflowRunner \
+--staging_location=gs://$PROJECT_ID/test \
+--temp_location=gs://$PROJECT_ID/temp \
+--save_main_session > parts-schema.log \
+ 2> parts-schema-error.log &
+
+
+
+# -- Second Dataflow job
+
+ nohup python /home/$USER/professional-services/examples/dataflow-python-examples/data_generation_for_benchmarking.py \
+--num_records=500 \
+--n_keys=500 \
+--schema_file=/home/$USER/professional-services/examples/dataflow-python-examples/batch-examples/cookbook-examples/pipelines/resources/supplier-schema.json \
+--p_null=0.05 \
+--output_bq_table=BigQueryFaker.suppliers \
+--project=$PROJECT_ID \
+--requirements_file=/home/$USER/professional-services/examples/dataflow-python-examples/requirements.txt \
+--disk_size_gb=30 \
+--worker_machine_type=n1-highcpu-2 \
+--runner=DataflowRunner \
+--staging_location=gs://$PROJECT_ID/test \
+--temp_location=gs://$PROJECT_ID/temp \
+--save_main_session > supplier-schema.log \
+ 2> supplier-schema-error.log &
+
+
+-- First
+
+ bq --location=US load --source_format=CSV --skip_leading_rows=1 BigQueryFaker.lineorders gs://cloud-training/gsp291/lineorders.csv /home/$USER/professional-services/examples/dataflow-python-examples/batch-examples/cookbook-examples/pipelines/resources/lineorder-schema.json
+
+-- Second 
+bq --location=US load --source_format=CSV --skip_leading_rows=1 --allow_jagged_rows --allow_quoted_newlines BigQueryFaker.customers gs://cloud-training/gsp291/customers.csv /home/$USER/professional-services/examples/dataflow-python-examples/batch-examples/cookbook-examples/pipelines/resources/customer-schema.json
